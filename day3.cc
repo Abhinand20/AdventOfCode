@@ -21,7 +21,9 @@ const struct {
     {1, -1},
     {1,1}
     };
+std::unordered_map<int, std::vector<int>> numbers_adjacent_to_gears;
 
+// (i,j) = (i) * c + j
 
 bool check_bounds(const int &x, const int &y, const int &r, const int&c) {
     return x >= 0 && x < r && y >= 0 && y < c;
@@ -40,6 +42,11 @@ bool is_valid(const int &i, const int &start, const int &end, const std::vector<
             int next_x = i + DIRECTIONS[d].x;
             int next_y = j + DIRECTIONS[d].y;
             if (check_bounds(next_x, next_y, r, c) && can_pick(next_x, next_y, grid)) {
+                if (grid[next_x][next_y] == '*') {
+                    int key = next_x * c + next_y;
+                    int val = stoi(grid[i].substr(start, end - start + 1));
+                    numbers_adjacent_to_gears[key].push_back(val);
+                }
                 return true;
             }
         }
@@ -80,16 +87,23 @@ int main(){
     std::string line;
     std::vector<std::string> grid;
 
-    int ans = 0;
+    int ans = 0, ans_2 = 0;
     while (std::getline(file, line)) {
         grid.push_back(line);
     }
     file.close();
 
     ans = get_sum_of_parts(grid);
+    
+    for (auto it : numbers_adjacent_to_gears) {
+        if (it.second.size() == 2) {
+            ans_2 += (it.second[0] * it.second[1]);
+        }
+    }
 
     std::ofstream output_file(OUTPUT_DIR);
     output_file << ans;
-    std::cout << "Ans = " << ans << std::endl;
+    std::cout << "Ans Part 1 = " << ans << std::endl;
+    std::cout << "Ans Part 2 = " << ans_2 << std::endl;
     return 0;
 }
