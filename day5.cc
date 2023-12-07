@@ -12,7 +12,7 @@
 
 const std::string INPUT_DIR = "./inputs/day5_1.txt";
 const std::string OUTPUT_DIR = "./outputs/day5_1.txt";
-const bool IS_DAY_TWO = false;
+const bool IS_DAY_TWO = true;
 
 std::vector<std::string> tokenize(const std::string &line, const std::string &delim) {
     std::vector<std::string> tokens;
@@ -27,8 +27,19 @@ std::vector<std::string> tokenize(const std::string &line, const std::string &de
     return tokens;
 }
 
-long find_location(long curr_seed, const std::vector<std::string> &maps, int i) {
+std::string make_key(long x, long y) {
+    return std::to_string(x) + "," + std::to_string(y);
+}
+
+long find_location(long curr_seed, const std::vector<std::string> &maps, int i, std::unordered_map<std::string, long> &cache) {
     if (i >= maps.size()) { return curr_seed; }
+    std::string key = make_key(i, curr_seed);
+
+    if (cache.count(key)) { 
+        std::cout << "Found in cache." << "\n";
+        return cache[key]; 
+    }
+
     // Find the current map
     std::string current_map = maps[i];
     std::vector<std::string> mappings = tokenize(current_map, "\n");
@@ -54,24 +65,30 @@ long find_location(long curr_seed, const std::vector<std::string> &maps, int i) 
             break;
         }
     }
-    return std::min(ans, find_location(matched, maps, i + 1));
+    return cache[key] = std::min(ans, find_location(matched, maps, i + 1, cache));
 }
 
 long process_content(const std::string &content) {
     std::vector<std::string> sections = tokenize(content, "\n\n");
     std::vector<std::string> seeds = tokenize(sections[0], " ");
     std::vector<std::string> maps{sections.begin() + 1, sections.end()};
+    std::unordered_map<std::string, long> map_cache;
+    std::unordered_map<long, long> seed_cache;
 
     long ans = LONG_MAX;
     for (int i = 1; i < seeds.size(); IS_DAY_TWO ? i += 2 : ++i) {
         if (!IS_DAY_TWO) {
             long curr_seed = stol(seeds[i]);
-            ans = std::min(ans, find_location(curr_seed, maps, 0));
+            ans = std::min(ans, find_location(curr_seed, maps, 0, map_cache));
         } else {
             long start_seed = stol(seeds[i]);
             long end_seed = start_seed + stol(seeds[i+1]);
             for (long j = start_seed; j < end_seed; ++j) {
-                ans = std::min(ans, find_location(j, maps, 0));
+                if (seed_cache.count(j)) {
+                    ans = seed_cache[j];
+                } else {
+                    ans = std::min(ans, find_location(j, maps, 0, map_cache));
+                }
             }
         }
     }
