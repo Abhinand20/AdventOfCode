@@ -14,16 +14,16 @@ std::unordered_map<char, int> ranks = {
     {'A', 1},
     {'K', 2},
     {'Q', 3},
-    {'J', 4},
-    {'T', 5},
-    {'9', 6},
-    {'8', 7},
-    {'7', 8},
-    {'6', 9},
-    {'5', 10},
-    {'4', 11},
-    {'3', 12},
-    {'2', 13}
+    {'T', 4},
+    {'9', 5},
+    {'8', 6},
+    {'7', 7},
+    {'6', 8},
+    {'5', 9},
+    {'4', 10},
+    {'3', 11},
+    {'2', 12},
+    {'J', 13},
 };
 enum class HAND {
     FIVE,
@@ -34,6 +34,15 @@ enum class HAND {
     ONEPAIR,
     HIGH,
     UNDEF
+};
+std::vector<HAND> ORDER = {
+    HAND::HIGH, 
+    HAND::ONEPAIR,
+    HAND::TWOPAIR, 
+    HAND::THREE, 
+    HAND::FULL,
+    HAND::FOUR,
+    HAND::FIVE
 };
 
 std::string hand_to_str(HAND hand) {
@@ -60,6 +69,20 @@ std::vector<std::string> tokenize(const std::string &line, const std::string &de
     }
     tokens.push_back(line.substr(start));
     return tokens;
+}
+
+HAND upgrade_hand(std::string hand, const HAND &current_rank) {
+    if (current_rank == HAND::FIVE) {
+        return current_rank;
+    }
+    std::unordered_map<char, int> groups;
+    for (const char &c : hand) {
+        ++groups[c];
+    }
+    if (groups.count('J') == 0) {
+        return current_rank;
+    }
+    int num_groups = groups.size();
 }
 
 HAND infer_hand(std::string hand) {
@@ -118,10 +141,9 @@ long get_all_ranks(std::unordered_map<HAND, std::vector<std::string>> &grouped_h
         // }
     }
 
-    std::vector<HAND> order = {HAND::HIGH, HAND::ONEPAIR, HAND::TWOPAIR, HAND::THREE, HAND::FULL, HAND::FOUR, HAND::FIVE};
     int rank = 1;
     long ans = 0;
-    for (const auto &o : order) {
+    for (const auto &o : ORDER) {
         // std::cout << hand_to_str(o) << " : ";
         for (const auto &s : grouped_hands[o]) {
             // std::cout << s << " " << rank << " ";
