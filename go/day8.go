@@ -108,7 +108,7 @@ func solve2(dirs string, graph map[string][2]string) int {
 }
 
 
-func main() {
+func SolveDay8() {
 	dirs, graph, err := ProcessInput()
 	if err != nil {
 		return
