@@ -26,7 +26,7 @@ var posLookup = map[string][2]position{
 }
 
 func ProcessInputD10() ([]string, error) {
-	const inputFile string = "../inputs/day10_1.txt"
+	const inputFile string = "../tests/day10_1.txt"
 	file, err := os.Open(inputFile)
 	inputs := make([]string, 0)
 	if err != nil {
@@ -71,6 +71,10 @@ func FindLoopSize(prev position, pos position, arr []string) (int, bool) {
 			if !IsValid(nextPos, arr) {
 				continue
 			}
+			// DEBUG
+			curr := arr[pos.x]
+			arr[pos.x] = curr[:pos.y] + "#" + curr[pos.y+1:]
+
 			if string(arr[nextPos.x][nextPos.y]) == "S" {
 				return len + 1, true
 			}
@@ -88,9 +92,12 @@ func StartTraversal(pos position, arr []string) int {
 	for i := 0; i < 4; i++ {
 		nextPos := position{pos.x + allDirs[i], pos.y + allDirs[i+1]}
 		if IsValid(nextPos, arr) {
-			len, valid := FindLoopSize(pos, nextPos, arr)
+			l, valid := FindLoopSize(pos, nextPos, arr)
 			if valid {
-				return len / 2 // odd size?
+				for i := 0; i < len(arr); i++ {
+					fmt.Println(arr[i])
+				}
+				return l / 2 // odd size?
 			}
 		}
 	}
