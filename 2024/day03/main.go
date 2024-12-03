@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"fmt"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -13,47 +12,27 @@ import (
 var input string
 
 func solvePart2(input string) int {
-	reMul := regexp.MustCompile(`mul\(([0-9]+,[0-9]+)\)`)
-	reDo := regexp.MustCompile(`do\(\)`)
-	reDont := regexp.MustCompile(`don't\(\)`)
-	matchesMul := reMul.FindAllStringSubmatch(input, -1)
-	indexesMul := reMul.FindAllStringIndex(input, -1) // [ [start1, end1], ... ]
-	indexesDo := reDo.FindAllStringIndex(input, -1)
-	indexesDont := reDont.FindAllStringIndex(input, -1)
-
-	combined := make([]int, 0)
-	lookupDo := make(map[int]bool)
-	for _,idx := range indexesDo {
-		lookupDo[idx[0]] = true
-		combined = append(combined, idx[0])
-	}
-	lookupDont := make(map[int]bool)
-	for _,idx := range indexesDont {
-		lookupDont[idx[0]] = true
-		combined = append(combined, idx[0])
-	}
-	lookupMul := make(map[int]int)
-	for i,idx := range indexesMul {
-		// Map start index to list index
-		lookupMul[idx[0]] = i
-		combined = append(combined, idx[0])
-	}
-	slices.Sort(combined)
-	flag := 0 // 0 - Do
+	patMul := `mul\(([0-9]+,[0-9]+)\)`
+	patDo := `do\(\)`
+	patDont := `don't\(\)`
+	
+	reCombined := regexp.MustCompile(patMul + "|" + patDo + "|" + patDont)
+	matches := reCombined.FindAllStringSubmatch(input, -1)
+	flag := 0 
 	ans := 0
-	for _, currIdx := range combined {
-		if ok := lookupDont[currIdx]; ok {
-			flag = 1
-			continue
-		}
-		if ok := lookupDo[currIdx]; ok {
+	for _, match := range matches {
+		if match[0] == "do()" {
 			flag = 0
 			continue
 		}
-		if flag == 0 {
-			candidate := matchesMul[lookupMul[currIdx]][1]
-			ans += doMul(candidate)
+		if match[0] == "don't()" {
+			flag = 1
+			continue
 		}
+		if flag == 0 {
+			ans += doMul(match[1])
+		}
+		
 	}
 	return ans
 }
