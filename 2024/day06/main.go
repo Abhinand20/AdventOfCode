@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -80,6 +81,71 @@ func solvePart1(input string) int {
 	return len(visited)
 }
 
+func findCycle(currPos Pos, grids <-chan []string, results chan<- bool, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for grid := range grids {
+		_, cycle := getPath(grid, currPos)
+		results <- cycle
+	}
+}
+
+
+func solvePart2Concurrent(input string) int {
+	defer timeIt("solvePart2Concurrent")()
+	ans := 0
+	grid := parseInput(input)
+	currPos := Pos{}
+	for i := 0; i < len(grid); i++ {
+		j := strings.IndexByte(grid[i], '^')
+		if j != -1 {
+			currPos.x, currPos.y = i, j
+			break
+		}	
+	}
+	path, _ := getPath(grid, currPos)
+	
+	const numWorkers = 64
+	var numTasks int = len(path) - 1  // For each possible obstacle
+	
+	// Setup go routines and channels
+	wg := sync.WaitGroup{}
+	results := make(chan bool, numTasks)
+	grids := make(chan []string, numTasks)
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		// Try to find a cycle for each updated grid
+		go findCycle(currPos, grids ,results, &wg)
+	}
+
+	// Send a new grid to each worker
+	for p := range path {
+		if p == currPos {
+			continue
+		}
+		b := []byte(grid[p.x])
+		c := b[p.y]
+		b[p.y] = '#'
+		grid[p.x] = string(b)
+		grids <- append([]string{}, grid...)
+		// Do we need to reset it again?
+		b[p.y] = c
+		grid[p.x] = string(b)
+	}
+	close(grids)
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+	
+	// Check how many grids led to a cycle
+	for r := range results {
+		if r {
+			ans++
+		}
+	}
+	return ans
+}
+
 // Get all distinct positions in the path
 // Place obstacle in each and then check for loop 
 func solvePart2(input string) int {
@@ -124,6 +190,6 @@ func timeIt(name string) func() {
 func main() {
 	ans1 := solvePart1(input)
 	fmt.Println(ans1)
-	ans2 := solvePart2(input)
+	ans2 := solvePart2Concurrent(input)
 	fmt.Println(ans2)
 }
