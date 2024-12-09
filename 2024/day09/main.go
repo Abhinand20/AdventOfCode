@@ -61,7 +61,7 @@ func doCompression(expanded []int) {
 	}
 }
 
-func tryFillFile(arr []int, fs, f, j int) {
+func tryFillFile(arr []int, fs, j int) {
 	for i := 0; i < len(arr); i++ {
 		if i >= j {
 			return 	
@@ -111,7 +111,7 @@ func doCompressionFile(arr []int) {
 			j--
 		}
 		// Now,
-		tryFillFile(arr, fs, f, j+1)
+		tryFillFile(arr, fs, j+1)
 	}
 }
 
