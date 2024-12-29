@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/heap"
 	_ "embed"
 	"fmt"
 	"math"
@@ -24,11 +25,45 @@ const (
 	SOUTH
 	WEST
 	NORTH
+	inf = math.MaxFloat64
 )
+
+
+/* Priority Queue */
+type Node struct {
+	p Pos
+	score float64
+	dir int
+}
+
+type PriorityQueue []Node
+
+// Implement heap.Interface
+func (pq PriorityQueue) Len() int { return len(pq) }
+
+func (pq PriorityQueue) Less(i, j int) bool {
+	return pq[i].score < pq[j].score
+}
+
+func (pq PriorityQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+}
+
+func (pq *PriorityQueue) Push(val any) {
+	*pq = append(*pq, val.(Node))
+}
+
+func (pq *PriorityQueue) Pop() any {
+	old := *pq
+	n := len(old)
+	ret := old[n-1]
+	*pq = old[0:n-1]
+	return ret 
+}
+
 
 // E, S, W, N
 var dirs = [4][2]int{{0,1}, {1,0}, {0,-1}, {-1,0}}
-var cache = make(map[cacheKey]float64)
 var answer = math.MaxFloat64
 
 
@@ -71,33 +106,27 @@ func turnClockwise(p Pos, currDir int) (Pos, int) {
 	return nextPos(p, i), i
 }
 
-
-func findMinScore(grid [][]rune, visited [][]bool, s Pos, d int, score float64, memo map[cacheKey]float64) float64 {
+func findMinScore(grid [][]rune, visited [][]bool, s Pos, d int, score float64) float64 {
 	if grid[s.x][s.y] == 'E' {
 		return score
 	}
 	if grid[s.x][s.y] == '#' || visited[s.x][s.y] || score >= answer {
 		return math.MaxFloat64
 	}
-	state := cacheKey{d, s}
-    if val, found := memo[state]; found {
-        return val
-    }
-	// Add it to visited
 	visited[s.x][s.y] = true
 	// Check other options
 	np := nextPos(s, d)
 	npc, dc := turnClockwise(s, d)
 	npa, da := turnAntiClockwise(s, d)
 	// Did we reach the dest?
-	ans := findMinScore(grid, visited, np, d, 1 + score, memo)
-	ans = math.Min(ans, findMinScore(grid, visited, npc, dc, 1001 + score, memo))
-	ans = math.Min(ans, findMinScore(grid, visited, npa, da, 1001 + score, memo))
+	ans := findMinScore(grid, visited, np, d, 1 + score)
+	ans = math.Min(ans, findMinScore(grid, visited, npc, dc, 1001 + score))
+	ans = math.Min(ans, findMinScore(grid, visited, npa, da, 1001 + score))
 	visited[s.x][s.y] = false
 	answer = math.Min(answer, ans)
-	// memo[state] = ans
 	return ans
 }
+
 
 // 3 choices - straight (+1), turn clockwise (+1000), turn anticlockwise (+1000) 
 // DFS and find the minimum cost
@@ -113,11 +142,50 @@ func solvePart1(input string) int {
 			}
 		}
 	}
-	memo := make(map[cacheKey]float64)
-	return int(findMinScore(grid, visited, startPos, EAST, 0.0, memo))
+	return int(findMinScore(grid, visited, startPos, EAST, 0.0))
+}
+
+// Djikstra's - cost is based on direction?
+func solvePart1Djisktra(input string) float64 {
+	grid := parseInput(input)
+	startPos := Pos{}
+	visited := make(map[cacheKey]bool)
+	for i := range grid {
+		for j := 0; j < len(grid[0]); j++ {
+			if grid[i][j] == 'S' {
+				startPos.x, startPos.y = i, j
+			}
+		}
+	}
+	pq := &PriorityQueue{Node{p: startPos, dir: EAST, score: 0}}
+	var ans float64
+	for pq.Len() > 0 {
+		cn := heap.Pop(pq).(Node)
+		// We reached the final node
+		if grid[cn.p.x][cn.p.y] == 'E' {
+			ans = cn.score
+			break
+		}
+		if grid[cn.p.x][cn.p.y] == '#' {
+			continue
+		}
+		ck := cacheKey{cn.dir, cn.p}
+		if _, ok := visited[ck]; ok {
+			continue
+		}
+		visited[ck] = true
+		np := nextPos(cn.p, cn.dir)
+		npc, dc := turnClockwise(cn.p, cn.dir)
+		npa, da := turnAntiClockwise(cn.p, cn.dir)
+
+		heap.Push(pq, Node{np, cn.score + 1, cn.dir})
+		heap.Push(pq, Node{npc, cn.score + 1001, dc})
+		heap.Push(pq, Node{npa, cn.score + 1001, da})
+	}
+	return ans
 }
 
 func main() {
-	ans1 := solvePart1(input)
+	ans1 := solvePart1Djisktra(input)
 	fmt.Println(ans1)
 }
