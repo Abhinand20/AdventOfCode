@@ -158,7 +158,7 @@ func solvePart1Djisktra(input string) float64 {
 		}
 	}
 	pq := &PriorityQueue{Node{p: startPos, dir: EAST, score: 0}}
-	var ans float64
+	var ans float64 = 0
 	for pq.Len() > 0 {
 		cn := heap.Pop(pq).(Node)
 		// We reached the final node
