@@ -67,12 +67,6 @@ func solvePart1(input string) int {
 	return ans
 }
 
-/*
-- Optimize on two dimensions
-1. Highest price for each buyer
-2. Common sequence across buyers
-*/
-
 func getDelta(price []int) delta {
 	deltas := make(delta)
 	diffs := make([]int, 0)
